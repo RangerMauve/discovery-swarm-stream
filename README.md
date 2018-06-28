@@ -7,25 +7,27 @@ Give access to a discovery swarm instance over a stream.
 
 ```javascript
 // On a server
-const DSS = require('discovery-swarm-stream')
+const DSS = require('discovery-swarm-stream/server')
 
-const swarm = DSS.server({
+const swarm = new DSS({
 	// swarm options here
+	// "stream" option will be ignored since that's processed by the client
 })
 
 const httpServer = require('http').createServer()
 httpServer.listen(4200)
 
 const server = require('websocket-stream').createServer({server: httpServer}, (ws) => {
-	swarm.handle(ws)
+	swarm.handleConnection(ws)
 })
 
 // On a client
-const DSS = require('discovery-swarm-stream')
+const DSS = require('discovery-swarm-stream/client')
 
 const socket = require('websocket-stream')('ws://localhost:4200')
 
-const swarm = DSS.client(socket, {
+const swarm = new DSS({
+	connection: socket
 	// Could have `stream` here for replication logic
 })
 
