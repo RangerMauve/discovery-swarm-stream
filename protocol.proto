@@ -1,0 +1,16 @@
+enum EventType {
+	CONNECT = 1;
+	JOIN = 2;
+	LEAVE = 3;
+	OPEN = 4;
+	CLOSE = 5;
+	DATA = 6;
+}
+
+message SwarmEvent {
+	required EventType type = 1;
+	// Used for discovery key and stream ID
+	optional bytes id = 2;
+	// Used for stream data
+	optional bytes data = 3;
+}

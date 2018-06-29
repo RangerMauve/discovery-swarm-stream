@@ -43,9 +43,11 @@ swarm.on('connection', function(connection) {
 ### Protocol
 
 Sent to the server
-- connect()
+- connect
 - join(discoveryKey)
 - leave(discoveryKey)
+
+Sent from the server
 - streamOpen(streamID)
 
 Sent from either end
