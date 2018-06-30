@@ -1,0 +1,31 @@
+{
+  "name": "discovery-swarm-stream",
+  "version": "1.0.0",
+  "description": "Give access to a discovery swarm instance over a stream.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "compile-protocol": "protocol-buffers protocol.proto -o messages.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RangerMauve/discovery-swarm-stream.git"
+  },
+  "keywords": [
+    "dat",
+    "swarm",
+    "dns",
+    "discovery",
+    "beaker"
+  ],
+  "author": "rangermauve",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/RangerMauve/discovery-swarm-stream/issues"
+  },
+  "homepage": "https://github.com/RangerMauve/discovery-swarm-stream#readme",
+  "devDependencies": {
+    "protocol-buffers": "^4.0.4"
+  }
+}
