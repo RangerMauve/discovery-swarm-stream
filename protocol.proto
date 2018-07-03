@@ -9,8 +9,8 @@ enum EventType {
 
 message SwarmEvent {
 	required EventType type = 1;
-	// Used for discovery key and stream ID
+	// Used for discovery key or stream id
 	optional bytes id = 2;
-	// Used for stream data
+	// Used for stream data, or for the channel when a new stream is opened
 	optional bytes data = 3;
 }
