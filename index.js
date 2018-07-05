@@ -14,63 +14,63 @@ Events:
 */
 
 module.exports = class DiscoverySwarmStream extends Duplex {
-	constructor(stream) {
-		super()
-		
-		stream
-			.pipe(lps.decode())
-			.pipe(this)
-			.pipe(lps.encode())
-			.pipe(stream);
-	}
+  constructor (stream) {
+    super()
 
-	sendEvent(type, id, data) {
-		this.push(messages.SwarmEvent.encode({
-			type: messages.EventType[type],
-			id: id,
-			data: data
-		}))
-	}
+    stream
+      .pipe(lps.decode())
+      .pipe(this)
+      .pipe(lps.encode())
+      .pipe(stream)
+  }
 
-	connect() {
-		this.sendEvent("CONNECT")
-	}
+  sendEvent (type, id, data) {
+    this.push(messages.SwarmEvent.encode({
+      type: messages.EventType[type],
+      id: id,
+      data: data
+    }))
+  }
 
-	join(discoveryKey) {
-		this.sendEvent("JOIN", discoveryKey)
-	}
+  connect () {
+    this.sendEvent('CONNECT')
+  }
 
-	leave(discoveryKey) {
-		this.sendEvent("LEAVE", discoveryKey)
-	}
+  join (discoveryKey) {
+    this.sendEvent('JOIN', discoveryKey)
+  }
 
-	openStream(streamId, channel) {
-		this.sendEvent("OPEN", streamId, channel)
-	}
+  leave (discoveryKey) {
+    this.sendEvent('LEAVE', discoveryKey)
+  }
 
-	closeStream(streamId) {
-		this.sendEvent("CLOSE", streamId)
-	}
+  openStream (streamId, channel) {
+    this.sendEvent('OPEN', streamId, channel)
+  }
 
-	streamData(streamId, data) {
-		this.sendEvent("DATA", streamId, data);
-	}
+  closeStream (streamId) {
+    this.sendEvent('CLOSE', streamId)
+  }
 
-	_write(chunk, encoding, callback) {
-		try {
-			var decoded = messages.SwarmEvent.decode(chunk)
-			switch(decoded.type) {
-				case (messages.EventType.CONNECT): this.emit("swarm:connect"); break;
-				case (messages.EventType.JOIN): this.emit("swarm:join", decoded.id); break;
-				case (messages.EventType.LEAVE): this.emit("swarm:leave", decoded.id); break;
-				case (messages.EventType.OPEN): this.emit("swarm:open", decoded.id, decoded.data); break;
-				case (messages.EventType.CLOSE): this.emit("swarm:close", decoded.id); break;
-				case(messages.EventType.DATA) : this.emit("swarm:data", decoded.id, decoded.data); break;
-			}
-		} catch(e) {
-			callback(e);
-		}
-	}
+  streamData (streamId, data) {
+    this.sendEvent('DATA', streamId, data)
+  }
 
-	_read() {}
+  _write (chunk, encoding, callback) {
+    try {
+      var decoded = messages.SwarmEvent.decode(chunk)
+      switch (decoded.type) {
+        case (messages.EventType.CONNECT): this.emit('swarm:connect'); break
+        case (messages.EventType.JOIN): this.emit('swarm:join', decoded.id); break
+        case (messages.EventType.LEAVE): this.emit('swarm:leave', decoded.id); break
+        case (messages.EventType.OPEN): this.emit('swarm:open', decoded.id, decoded.data); break
+        case (messages.EventType.CLOSE): this.emit('swarm:close', decoded.id); break
+        case (messages.EventType.DATA) : this.emit('swarm:data', decoded.id, decoded.data); break
+      }
+    } catch (e) {
+      callback(e)
+    }
+  }
+
+  _read () {}
 }
