@@ -34,7 +34,8 @@
     "eslint-plugin-standard": "^3.1.0",
     "hyperdrive": "^9.14.0",
     "protocol-buffers": "^4.0.4",
-    "random-access-memory": "^3.0.0"
+    "random-access-memory": "^3.0.0",
+    "websocket-stream": "^5.1.2"
   },
   "dependencies": {
     "discovery-swarm": "^5.1.1",
