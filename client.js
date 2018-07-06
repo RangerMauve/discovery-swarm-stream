@@ -19,6 +19,11 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
     this.queued = 0
     this.connected = 0
 
+    var handleOpen = this._handleOpen.bind(this)
+
+    this._protocol.connect()
+    this._protocol.on('swarm:open', handleOpen)
+
     if (options.stream) { this._replicate = options.stream }
   }
 
