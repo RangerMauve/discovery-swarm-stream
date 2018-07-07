@@ -1,5 +1,18 @@
-# discovery-swarm-stream
-Give access to a discovery swarm instance over a stream.
+# discovery-proxy
+
+Alows clients to use [discovery-channel](https://github.com/maxogden/discovery-channel) to discover and connect to peers.
+
+Clients connect to the server (thos module provides a default WS implementation), search for "discovery keys", and the proxy automatically discovers and connects to peers and then proxies those connections to the client.
+
+If two clients are discovering the same key, the proxy can connect them to each other
+
+All discovery-proxies can make themselves discoverable so that clients can find more proxies.
+
+Requires:
+
+- ES6 classes
+- Arrow functions
+- Weak Sets (server only)
 
 **THIS IS A WORK IN PROGRESS! NOTHING TO SEE HERE.**
 
@@ -11,7 +24,7 @@ const DSS = require('discovery-swarm-stream/server')
 
 const swarm = new DSS({
 	// swarm options here
-	// "stream" option will be ignored since that's processed by the client
+	// Doesn't support UTP for now
 })
 
 const httpServer = require('http').createServer()
@@ -27,15 +40,11 @@ const DSS = require('discovery-swarm-stream/client')
 const socket = require('websocket-stream')('ws://localhost:4200')
 
 const swarm = new DSS({
-	connection: socket
-	// Could have `stream` here for replication logic
+	connection: socket,
+	stream: (connection) => connection.write('hello!')
 })
 
 swarm.join('wowcool')
-
-swarm.on('connection', function(connection) {
-	connection.write('hello!')
-})
 ```
 
 ## Plans:
