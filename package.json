@@ -1,7 +1,7 @@
 {
-  "name": "discovery-swarm-stream",
+  "name": "discovery-proxy",
   "version": "1.0.0",
-  "description": "Give access to a discovery swarm instance over a stream.",
+  "description": "Proxy discovery over a stream",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -38,7 +38,7 @@
     "websocket-stream": "^5.1.2"
   },
   "dependencies": {
-    "discovery-swarm": "^5.1.1",
+    "discovery-channel": "^5.5.1",
     "length-prefixed-stream": "^1.6.0",
     "protocol-buffers-encodings": "^1.1.0",
     "readable-stream": "^2.3.6"

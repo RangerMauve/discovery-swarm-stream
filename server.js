@@ -1,58 +1,79 @@
-var discoverySwarm = require('discovery-swarm')
+var discoveryChannel = require('discovery-channel')
+var net = require('net')
 
-function DiscoverySwarmStream(options) {
-	discoverySwarm.prototype._onconnection = handleconnection
+var DiscoverySwarmStream = require('./')
+var ProxyStream = require('./proxystream')
 
-	discoverySwarm.call(this, options);
-	// Initialize map of clients
-	// Initialize map of weaksets to map subscription -> [clients]
-}
+module.exports = class DiscoverySwarmStreamServer {
+  constructor (options) {
+    if (!options) {
+      options = {}
+    }
+    this._discovery = discoveryChannel(options)
 
-DiscoverySwarmStream.prototype = util.inherits(DiscoverySwarmStream, discoverySwarm)
+    // List of clients
+    this._clients = []
+    // Map of weaksets that looks like `subscription -> [clients]`
+    this._subs = {}
+  }
 
-DiscoverySwarmStream.prototype.handleConnection = function (ws) {
-	/*
-	 * Add client to map, should look like 
-	 * Listen on close to remove from map and close any streams
-	 * Start processing messages, add listeners for listen/unlisten/close
-	 */
-}
+  destroy () {
+    // Destroy all clients and discovery swarm
+  }
 
-// Modified from discovery-swarm
-DiscoverySwarmStream.prototype._onconnection = function (connection, type, peer) {
-	var self = this
+  _onPeer (id, peer) {
+    // Find the clients that want this id from the subMap
+    // Pick a random subset of them
+    // Open connections for each client to the peer and proxy them
+  }
 
-	// internal variables used for debugging
-	connection._debugId = ++connectionDebugIdCounter
-	connection._debugStartTime = Date.now()
+  _onClientSubscribe (client, key) {
+    // Add to subMap for the key
+    // See if any clients are already subscribed to this
+    // Connect to a random subset of them
+    // Invoke discovery.join(key)
+  }
 
-	var info = {
-		type: type,
-		initiator: !!peer,
-		id: null,
-		host: peer ? peer.host : connection.remoteAddress,
-		port: peer ? peer.port : connection.remotePort,
-		channel: peer ? peer.channel : null
-	}
+  _onClientUnsubscribe (client, key) {
+    // Remove the client from the subMap
+  }
 
-	this.emit('handshaking', connection, info)
+  _proxyClient (client, peer, key) {
+    var connection = net.connect(peer.port, peer.host)
+    var id = null // TODO generate a random ID
+    client.openStream(id, key)
 
-	connection.on('close', onclose)
-	self.connections.push(connection)
-	self.emit('connection', connection, info)
+    var proxy = new ProxyStream(client, id)
 
-	// Find which clients want data from this peer
-	// Proxy to the first one
-	// If more exist, open more connections to the peer
+    proxy.on('end', () => connection.end())
 
-	function onclose() {
-		self.totalConnections--
-		self.emit('connection-closed', connection, info)
+    connection.pipe(proxy).pipe(connection)
+  }
 
-		var i = self.connections.indexOf(connection)
-		if (i > -1) {
-			var last = self.connections.pop()
-			if (last !== connection) self.connections[i] = last
-		}
-	}
+  _addSub (client, key) {
+    var existing = this._subs[key]
+    if (!existing) {
+      existing = []
+      this._subs[key] = existing
+    }
+    existing.push(client)
+  }
+
+  _removeSub (client, key) {
+
+  }
+
+  _removeCleint (client) {
+    // Remove from all subs lists
+  }
+
+  addClient (stream) {
+    var client = new DiscoverySwarmStream(stream)
+    this._clients.push(client)
+
+    // TODO: Add timeout and clear on "connection" packet
+    client.once('connection', () => {
+      // Listen to client events here
+    })
+  }
 }

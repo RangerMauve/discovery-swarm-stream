@@ -15,6 +15,7 @@ Events:
 
 module.exports = class DiscoverySwarmStream extends Duplex {
   constructor (stream) {
+    // TODO: Keep track of channels this is a part of
     super()
 
     stream
