@@ -6,11 +6,11 @@ module.exports = class ProxyStream extends Duplex {
     this._id = id
     this._protocol = protocol
     this._isClosed = false
-    this.handle_data = this._handleData.bind(this)
-    this.handle_close = this._handleClose.bind(this)
+    this._handle_data = this._handleData.bind(this)
+    this._handle_close = this._handleClose.bind(this)
 
-    this._protocol.on('swarm:data', this._handleData)
-    this._protocol.on('swarm:close', this._handleClose)
+    this._protocol.on('swarm:data', this._handle_data)
+    this._protocol.on('swarm:close', this._handle_close)
     // TODO: Listen on close event for protocol
   }
   _handleData (streamid, data) {
@@ -28,8 +28,8 @@ module.exports = class ProxyStream extends Duplex {
   }
   _cleanup () {
     this._isClosed = true
-    this._protocol.removeListener('swarm:data', this._handleData)
-    this._protocol.removeListener('swarm:close', this._handleClose)
+    this._protocol.removeListener('swarm:data', this._handle_data)
+    this._protocol.removeListener('swarm:close', this._handle_close)
   }
   _isId (streamid) {
     return streamid.toString('hex') === this._id.toString('hex')
