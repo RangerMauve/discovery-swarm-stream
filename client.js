@@ -21,9 +21,8 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
     this.connected = 0
 
     var handleOpen = this._handleOpen.bind(this)
-
-    this._protocol.connect()
     this._protocol.on('swarm:open', handleOpen)
+    this._protocol.connect()
 
     if (options.stream) { this._replicate = options.stream }
   }
@@ -46,8 +45,10 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
     self.emit('handshaking', stream, info)
 
     replicationStream.once('handshake', function (remoteId) {
-      var remoteIdHex = remoteId.toString('hex')
-      info.id = remoteIdHex
+      if (remoteId) {
+        var remoteIdHex = remoteId.toString('hex')
+        info.id = remoteIdHex
+      }
       self.emit('connection', stream, info)
     })
 

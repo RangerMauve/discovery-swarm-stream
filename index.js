@@ -68,6 +68,7 @@ module.exports = class DiscoverySwarmStream extends Duplex {
         case (messages.EventType.CLOSE): this.emit('swarm:close', decoded.id); break
         case (messages.EventType.DATA) : this.emit('swarm:data', decoded.id, decoded.data); break
       }
+      callback()
     } catch (e) {
       callback(e)
     }
