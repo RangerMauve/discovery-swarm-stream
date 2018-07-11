@@ -41,6 +41,7 @@
     "discovery-channel": "^5.5.1",
     "length-prefixed-stream": "^1.6.0",
     "protocol-buffers-encodings": "^1.1.0",
-    "readable-stream": "^2.3.6"
+    "readable-stream": "^2.3.6",
+    "sodium-universal": "^2.0.0"
   }
 }

@@ -1,15 +1,22 @@
 var discoveryChannel = require('discovery-channel')
+var sodium = require('sodium-universal')
+var EventEmitter = require('events')
 var net = require('net')
 
 var DiscoverySwarmStream = require('./')
 var ProxyStream = require('./proxystream')
 
-module.exports = class DiscoverySwarmStreamServer {
+module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   constructor (options) {
+    super()
     if (!options) {
       options = {}
     }
     this._discovery = discoveryChannel(options)
+    this._discovery.on('peer', (key, peer) => {
+      this.emit('key:' + key.toString('hex'), key, peer)
+    })
+    this._discovery.on('close', () => this.emit('close'))
 
     // List of clients
     this._clients = []
@@ -17,63 +24,83 @@ module.exports = class DiscoverySwarmStreamServer {
     this._subs = {}
   }
 
-  destroy () {
-    // Destroy all clients and discovery swarm
-  }
-
-  _onPeer (id, peer) {
-    // Find the clients that want this id from the subMap
-    // Pick a random subset of them
-    // Open connections for each client to the peer and proxy them
-  }
-
-  _onClientSubscribe (client, key) {
-    // Add to subMap for the key
-    // See if any clients are already subscribed to this
-    // Connect to a random subset of them
-    // Invoke discovery.join(key)
-  }
-
-  _onClientUnsubscribe (client, key) {
-    // Remove the client from the subMap
-  }
-
-  _proxyClient (client, peer, key) {
-    var connection = net.connect(peer.port, peer.host)
-    var id = null // TODO generate a random ID
-    client.openStream(id, key)
-
-    var proxy = new ProxyStream(client, id)
-
-    proxy.on('end', () => connection.end())
-
-    connection.pipe(proxy).pipe(connection)
-  }
-
-  _addSub (client, key) {
-    var existing = this._subs[key]
-    if (!existing) {
-      existing = []
-      this._subs[key] = existing
-    }
-    existing.push(client)
-  }
-
-  _removeSub (client, key) {
-
-  }
-
-  _removeCleint (client) {
-    // Remove from all subs lists
+  destroy (cb) {
+    this._discovery.destroy(cb)
+    this._clients.forEach((client) => {
+      client.destroy()
+    })
   }
 
   addClient (stream) {
-    var client = new DiscoverySwarmStream(stream)
+    var client = new Client(stream)
     this._clients.push(client)
 
     // TODO: Add timeout and clear on "connection" packet
-    client.once('connection', () => {
-      // Listen to client events here
+    client.once('connection', client.init.bind(client, this))
+
+    return client
+  }
+}
+
+class Client extends DiscoverySwarmStream {
+  constructor (stream) {
+    super(stream)
+    this._connections = {}
+    this._subscriptions = []
+    this._doJoin = this._doJoin.bind(this)
+    this._doLeave = this._doLeave.bind(this)
+    this.connectPeer = this.connectPeer.bind(this)
+    this.destroy = this.destroy.bind(this)
+  }
+
+  init (swarm) {
+    this._swarm = swarm
+    this.on('swarm:join', (key) => {
+      var stringKey = key.toString('hex')
+      this._swarm.on('key:' + stringKey, this.connectPeer)
+      this._subscriptions.push(stringKey)
     })
+    this.on('swarm:leave', (key) => {
+      var stringKey = key.toString('hex')
+      this._swarm.removeListener('key:' + stringKey, this.connectPeer)
+      this._subscriptions = this._subscriptions.filter((existing) => {
+        return existing !== stringKey
+      })
+    })
+    this.once('end', this.destroy)
+  }
+
+  destroy () {
+    this._connections.forEach((connection) => {
+      connection.end()
+    })
+    this._subscriptions.forEach((key) => {
+      this._swarm.removeListener('key:' + key, this.connectPeer)
+    })
+  }
+
+  connectPeer (key, peer) {
+    var url = peer.host + ':' + peer.port
+
+    if (this._connections[url]) {
+      return this._connections[url]
+    }
+
+    var connection = net.connect(peer.port, peer.host)
+    this._connections[url] = connection
+    var id = Buffer.allocUnsafe(12) // Cryptographically random data
+    sodium.randombytes_buf(id)
+
+    this.openStream(id, key)
+
+    var proxy = new ProxyStream(this, id)
+
+    proxy.on('end', () => connection.end())
+
+    connection.once('end', () => {
+      this._connections[url] = null
+    })
+
+    connection.pipe(proxy).pipe(connection)
   }
 }
