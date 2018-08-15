@@ -4,10 +4,10 @@ var DiscoverySwarmStream = require('./')
 var ProxyStream = require('./proxystream')
 
 /*
-Create map of [streamid] => [node stream]
-Emit handshaking event when getting the `open` event
-Emit the connection and connection-closed events
-Peer info objects look similar, but use `-1` for the port and use the ID to hex as the host. Initiator is always false. Type is `proxy`
+  Create map of [streamid] => [node stream]
+  Emit handshaking event when getting the `open` event
+  Emit the connection and connection-closed events
+  Peer info objects look similar, but use `-1` for the port and use the ID to hex as the host. Initiator is always false. Type is `proxy`
 */
 
 module.exports = class DiscoverySwarmClient extends EventEmitter {
@@ -56,19 +56,25 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
   }
 
   join (key, options, cb) {
+    if (typeof key === 'string') {
+      key = Buffer.from(key, 'hex')
+    }
     if (!cb && (typeof options === 'function')) {
       cb = options
     }
     this._protocol.join(key)
-    cb()
+    if (cb) cb()
   }
   leave (key) {
+    if (typeof key === 'string') {
+      key = Buffer.from(key, 'hex')
+    }
     this._protocol.leave(key)
   }
   listen () {
     // No-op, just in case
   }
   _replicate (info) {
-    // Do the default handshake thing for replication
+    // TODO: Do the default handshake thing for replication
   }
 }
