@@ -11,7 +11,6 @@ module.exports = class ProxyStream extends Duplex {
 
     this._protocol.on('swarm:data', this._handle_data)
     this._protocol.on('swarm:close', this._handle_close)
-    // TODO: Listen on close event for protocol
   }
   _handleData (streamid, data) {
     // See if the event was for this stream
