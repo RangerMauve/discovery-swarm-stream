@@ -60,7 +60,7 @@ function addClient (hostname, port, archiveKey) {
       })
 
       replicationStream.on('error', (e) => {
-        console.error('Replication error', info, e)
+        // Ignore replication errors for now
       })
 
       return replicationStream
