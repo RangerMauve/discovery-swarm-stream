@@ -1,5 +1,5 @@
 {
-  "name": "discovery-proxy",
+  "name": "discovery-swarm-stream",
   "version": "1.0.0",
   "description": "Proxy discovery over a stream",
   "main": "index.js",

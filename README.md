@@ -1,4 +1,4 @@
-# discovery-proxy
+# Discovery Swarm Stream
 
 Alows clients to use [discovery-channel](https://github.com/maxogden/discovery-channel) to discover and connect to peers.
 
@@ -6,17 +6,15 @@ Clients connect to the server (thos module provides a default WS implementation)
 
 If two clients are discovering the same key, the proxy can connect them to each other
 
-All discovery-proxies can make themselves discoverable so that clients can find more proxies.
-
 Requires:
 
 - ES6 classes
 - Arrow functions
 - Weak Sets (server only)
 
-**THIS IS A WORK IN PROGRESS! NOTHING TO SEE HERE.**
+**THIS IS A WORK IN PROGRESS! Please report any bugs you encounter in the issue tracker.**
 
-## (Dream) Example
+## Example
 
 ```javascript
 // On a server
@@ -45,9 +43,11 @@ const swarm = new DSS({
 })
 
 swarm.join('wowcool')
+
+swarm.leave('wowcool')
 ```
 
-## Plans:
+Check out `demo/index.js` for an example of how this can be used with hyperdrive.
 
 ### Protocol
 
