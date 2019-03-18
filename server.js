@@ -52,6 +52,7 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   }
 
   join (key) {
+    this._discovery.leave(key)
     this._discovery.join(key)
   }
 
@@ -96,6 +97,8 @@ class Client extends DiscoverySwarmStream {
     var id = Buffer.allocUnsafe(12) // Cryptographically random data
     sodium.randombytes_buf(id)
     this.id = id
+
+    stream.once('close', this.destroy.bind(this))
   }
 
   init (swarm) {
@@ -124,8 +127,6 @@ class Client extends DiscoverySwarmStream {
       })
       this._swarm._leaveClient(key, this)
     })
-
-    this.once('close', this.destroy.bind(this))
   }
 
   destroy () {
