@@ -33,13 +33,13 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
 
   reconnect (connection) {
     if (this._protocol) {
-      this._protocol.removeListener('end', this._handleEnd)
+      this._protocol.removeListener('close', this._handleEnd)
       this._protocol.end()
     }
     this._protocol = new DiscoverySwarmStream(connection)
     this._protocol.on('swarm:open', this._handleOpen)
     this._protocol.connect()
-    this._protocol.once('end', this._handleEnd)
+    this._protocol.once('close', this._handleEnd)
 
     for (let key of this._channels) {
       this.join(key)

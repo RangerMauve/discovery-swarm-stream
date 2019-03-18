@@ -77,7 +77,7 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
 
     // TODO: Add timeout and clear on "connection" packet
     client.once('swarm:connect', client.init.bind(client, this))
-    client.once('end', () => {
+    client.once('close', () => {
       this._clients.splice(this._clients.indexOf(client), 1)
     })
 
@@ -100,6 +100,7 @@ class Client extends DiscoverySwarmStream {
 
   init (swarm) {
     this._swarm = swarm
+
     this.on('swarm:join', (key) => {
       var stringKey = key.toString('hex')
       this._swarm.on('key:' + stringKey, this.connectTCP)
@@ -114,6 +115,7 @@ class Client extends DiscoverySwarmStream {
         this.connectClient(key, client)
       })
     })
+
     this.on('swarm:leave', (key) => {
       var stringKey = key.toString('hex')
       this._swarm.removeListener('key:' + stringKey, this.connectTCP)
@@ -122,7 +124,8 @@ class Client extends DiscoverySwarmStream {
       })
       this._swarm._leaveClient(key, this)
     })
-    this.once('end', this.destroy)
+
+    this.once('close', this.destroy.bind(this))
   }
 
   destroy () {
@@ -146,9 +149,9 @@ class Client extends DiscoverySwarmStream {
 
     var proxy = new ProxyStream(this, id)
 
-    proxy.on('end', () => stream.end())
+    proxy.on('close', () => stream.end())
 
-    stream.once('end', () => {
+    stream.once('close', () => {
       this._connections[peerId] = null
     })
 
