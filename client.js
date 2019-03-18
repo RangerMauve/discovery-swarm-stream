@@ -26,6 +26,8 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
       this._replicate = options.stream
     }
 
+    this._channels = new Set()
+
     this.reconnect(connection)
   }
 
@@ -38,6 +40,10 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
     this._protocol.on('swarm:open', this._handleOpen)
     this._protocol.connect()
     this._protocol.once('end', this._handleEnd)
+
+    for (let key of this._channels) {
+      this.join(key)
+    }
   }
 
   _handleEnd () {
@@ -81,18 +87,29 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
       cb = options
     }
     this._protocol.join(key)
+
+    this._channels.add(key.toString('hex'))
     if (cb) cb()
   }
-  leave (key) {
+
+  leave (key, cb) {
     if (typeof key === 'string') {
       key = Buffer.from(key, 'hex')
     }
+
     this._protocol.leave(key)
+
+    this._channels.delete(key.toString('hex'))
+
+    if (cb) cb()
   }
+
   listen () {
     // No-op, just in case
   }
+
   _replicate (info) {
     // TODO: Do the default handshake thing for replication
+    throw new Error('Missing `stream` in options')
   }
 }
