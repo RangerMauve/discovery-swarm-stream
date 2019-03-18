@@ -28,6 +28,7 @@ var DEFAULT_OPTS = {
 var server = new DSSServer(DEFAULT_OPTS)
 
 var tcpServer = net.createServer((socket) => {
+  console.log('Got connection')
   server.addClient(socket)
 })
 
@@ -43,12 +44,10 @@ function addClient (hostname, port, archiveKey) {
 
   var archive = hyperdrive(RAM, archiveKey)
 
-  archive.metadata.update((err) => {
-    if (err) return
-    archive.readFile('/index.html', 'utf-8', (err, data) => {
-      if (err) return
-      console.log('Got data:', data)
-    })
+  console.log('Reading data from archive')
+  archive.readFile('/index.html', 'utf-8', (err, data) => {
+    if (err) throw err
+    console.log('Got data:', data)
   })
 
   var client = new DSSClient({

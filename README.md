@@ -2,7 +2,7 @@
 
 Alows clients to use [discovery-channel](https://github.com/maxogden/discovery-channel) to discover and connect to peers.
 
-Clients connect to the server (thos module provides a default WS implementation), search for "discovery keys", and the proxy automatically discovers and connects to peers and then proxies those connections to the client.
+Clients connect to the server, search for "discovery keys", and the proxy automatically discovers and connects to peers and then proxies those connections to the client.
 
 If two clients are discovering the same key, the proxy can connect them to each other
 
@@ -11,8 +11,6 @@ Requires:
 - ES6 classes
 - Arrow functions
 - Weak Sets (server only)
-
-**THIS IS A WORK IN PROGRESS! Please report any bugs you encounter in the issue tracker.**
 
 ## Example
 
@@ -34,8 +32,9 @@ const server = require('websocket-stream').createServer({server: httpServer}, (w
 
 // On a client
 const DSS = require('discovery-swarm-stream/client')
+const websocket = require('websocket-stream')
 
-const socket = require('websocket-stream')('ws://localhost:4200')
+const socket = websocket('ws://localhost:4200')
 
 const swarm = new DSS({
 	connection: socket,
@@ -45,6 +44,10 @@ const swarm = new DSS({
 swarm.join('wowcool')
 
 swarm.leave('wowcool')
+
+swarm.on('disconnected', () => {
+	swarm.reconnect(websocket('ws://localhost:4200'))
+})
 ```
 
 Check out `demo/index.js` for an example of how this can be used with hyperdrive.

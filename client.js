@@ -13,18 +13,36 @@ var ProxyStream = require('./proxystream')
 module.exports = class DiscoverySwarmClient extends EventEmitter {
   constructor (options) {
     super()
-    var stream = options.connection
-    if (!stream) throw new TypeError('Must specify `connection` in options')
-    this._protocol = new DiscoverySwarmStream(stream)
+    var connection = options.connection
+    if (!connection) throw new TypeError('Must specify `connection` in options')
     this.connecting = 0
     this.queued = 0
     this.connected = 0
 
-    var handleOpen = this._handleOpen.bind(this)
-    this._protocol.on('swarm:open', handleOpen)
-    this._protocol.connect()
+    this._handleOpen = this._handleOpen.bind(this)
+    this._handleEnd = this._handleEnd.bind(this)
 
-    if (options.stream) { this._replicate = options.stream }
+    if (options.stream) {
+      this._replicate = options.stream
+    }
+
+    this.reconnect(connection)
+  }
+
+  reconnect (connection) {
+    if (this._protocol) {
+      this._protocol.removeListener('end', this._handleEnd)
+      this._protocol.end()
+    }
+    this._protocol = new DiscoverySwarmStream(connection)
+    this._protocol.on('swarm:open', this._handleOpen)
+    this._protocol.connect()
+    this._protocol.once('end', this._handleEnd)
+  }
+
+  _handleEnd () {
+    this._protocol = null
+    this.emit('disconnected')
   }
 
   _handleOpen (streamid, channel) {
