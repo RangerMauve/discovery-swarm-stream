@@ -136,8 +136,9 @@ class Client extends DiscoverySwarmStream {
         connection.end()
       }
     })
-    this._subscriptions.forEach((key) => {
-      this._swarm.removeListener('key:' + key, this.connectTCP)
+    this._subscriptions.forEach((stringKey) => {
+      const key = Buffer.from(stringKey, 'hex')
+      this._swarm.removeListener('key:' + stringKey, this.connectTCP)
       this._swarm._leaveClient(key, this)
     })
   }
