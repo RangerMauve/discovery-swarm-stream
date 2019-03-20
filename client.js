@@ -108,6 +108,10 @@ module.exports = class DiscoverySwarmClient extends EventEmitter {
     // No-op, just in case
   }
 
+  close (cb) {
+    this._protocol.end(cb)
+  }
+
   _replicate (info) {
     // TODO: Do the default handshake thing for replication
     throw new Error('Missing `stream` in options')

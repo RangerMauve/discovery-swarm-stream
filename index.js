@@ -17,6 +17,9 @@ module.exports = class DiscoverySwarmStream extends Duplex {
   constructor (stream) {
     super()
 
+    // There's going to be a lot of listeners
+    this.setMaxListeners(256)
+
     stream
       .pipe(lps.decode())
       .pipe(this)

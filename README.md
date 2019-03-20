@@ -45,9 +45,14 @@ swarm.join('wowcool')
 
 swarm.leave('wowcool')
 
+// If you want to add auto-reconnect logic
 swarm.on('disconnected', () => {
 	swarm.reconnect(websocket('ws://localhost:4200'))
 })
+
+setTimeout(() => {
+	swarm.close()
+}, 10000)
 ```
 
 Check out `demo/index.js` for an example of how this can be used with hyperdrive.
