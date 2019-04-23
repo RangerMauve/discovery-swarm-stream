@@ -4,7 +4,7 @@ Alows clients to use [discovery-channel](https://github.com/maxogden/discovery-c
 
 Clients connect to the server, search for "discovery keys", and the proxy automatically discovers and connects to peers and then proxies those connections to the client.
 
-If two clients are discovering the same key, the proxy can connect them to each other
+If two clients are discovering the same key, the proxy can connect them to each other if you set the `connectExistingClients` on the server.
 
 Requires:
 

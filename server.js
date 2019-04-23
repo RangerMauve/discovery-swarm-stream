@@ -12,6 +12,8 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     if (!options) {
       options = {}
     }
+
+    this.connectExistingClients = !!options.connectExistingClients
     this._discovery = discoveryChannel(options)
     this._discovery.on('peer', (key, peer) => {
       this.emit('key:' + key.toString('hex'), key, peer)
@@ -109,6 +111,10 @@ class Client extends DiscoverySwarmStream {
       this._swarm.on('key:' + stringKey, this.connectTCP)
       this._subscriptions.push(stringKey)
       this._swarm._joinClient(key, this)
+
+      // Don't connect clients together unless you need it
+      // This is to encourage connections through WebRTC
+      if(!this._swarm.connectExistingClients) return
 
       var existing = this._swarm.subscribedClients(key)
 
