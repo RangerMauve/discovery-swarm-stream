@@ -17,9 +17,10 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     this._discovery = createDiscovery(options)
 
     // For making sure other peers don't remember us
+    // Otherwise they'll block new connections if we connected before
     this._discovery.id = null
 
-    // I am not proud of this code
+    // I am not proud of this code, but it works! :D
     const createStream = options.stream || this._discovery._createReplicationStream.bind(this._discovery)
     this._discovery._swarm._stream = (info) => {
       const stream = createStream(info)
@@ -30,7 +31,14 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
         debug('got key from connection', key, info)
         this.emit('key:' + key.toString('hex'), key, info)
         stream.end()
-        this._discovery._swarm._peersSeen[info.id] = null
+
+        // This needs to be done so that we can connect to this peer agian
+        const shortId = info.host + ':' + info.port
+        const mediumId = shortId + '@'
+        const longId = mediumId + key.toString('hex')
+        this._discovery._swarm._peersSeen[longId] = null
+        this._discovery._swarm._peersSeen[mediumId] = null
+        this._discovery._swarm._peersSeen[shortId] = null
       }
 
       if(info.channel) {
