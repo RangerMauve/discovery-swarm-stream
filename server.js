@@ -4,6 +4,7 @@ var net = require('net')
 var createDiscovery = require('hyperdiscovery')
 var DiscoverySwarmStream = require('./')
 var ProxyStream = require('./proxystream')
+var debug = require('debug')('discovery-swarm-stream:server')
 
 module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   constructor (options) {
@@ -20,7 +21,10 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     this._discovery._swarm._stream = (info) => {
       const stream = createStream(info)
 
+      debug('got connection', info)
+
       stream.on('feed', (key) => {
+        debug('got key from connection', key, info)
         this.emit('key:' + key.toString('hex'), key, info)
       })
 
@@ -86,6 +90,8 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   addClient (stream) {
     var client = new Client(stream)
     this._clients.push(client)
+
+    debug('incoming client', client.id.toString('hex'))
 
     // TODO: Add timeout and clear on "connection" packet
     client.once('swarm:connect', client.init.bind(client, this))
@@ -197,6 +203,8 @@ class Client extends DiscoverySwarmStream {
     if (this._connections[id]) {
       return this._connections[id]
     }
+
+    debug('making outgoing connection', this.id.toString('hex'), key, peer)
 
     var connection = net.connect(peer.port, peer.host)
     this._connections[id] = connection
