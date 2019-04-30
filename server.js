@@ -26,6 +26,7 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
       stream.on('feed', (key) => {
         debug('got key from connection', key, info)
         this.emit('key:' + key.toString('hex'), key, info)
+        stream.end()
       })
 
       return stream
@@ -122,6 +123,7 @@ class Client extends DiscoverySwarmStream {
     this._swarm = swarm
 
     this.on('swarm:join', (key) => {
+      debug('joining discovery key', this.id.toString('hex'), key)
       var stringKey = key.toString('hex')
       this._swarm.on('key:' + stringKey, this.connectTCP)
       this._subscriptions.push(stringKey)
