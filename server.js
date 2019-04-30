@@ -29,7 +29,9 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
 
       // This needs to be done so that we can connect to this peer agian
       const shortId = info.host + ':' + info.port
-      this._discovery._swarm._peersSeen[shortId] = null
+
+      const peersSeen = this._discovery._swarm._peersSeen
+      if (peersSeen[shortId]) peersSeen[shortId] = 0
 
       const emitKeyAndClose = (key) => {
         debug('got key from connection', key, info)
@@ -37,13 +39,11 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
         stream.end()
 
         // This needs to be done so that we can connect to this peer agian
-        const mediumId = shortId + '@'
-        const longId = mediumId + key.toString('hex')
-        this._discovery._swarm._peersSeen[longId] = null
-        this._discovery._swarm._peersSeen[mediumId] = null
+        const longId = shortId + '@' + key.toString('hex')
+        if (peersSeen[longId]) peersSeen[longId] = 0
       }
 
-      if(info.channel) {
+      if (info.channel) {
         process.nextTick(() => {
           emitKeyAndClose(info.channel)
         })
@@ -54,7 +54,8 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
       return stream
     }
 
-    this._discovery.on('connection', () => {
+    // We don't need any connections after we have their discovery key
+    this._discovery.on('connection', (connection) => {
       connection.close()
     })
 
