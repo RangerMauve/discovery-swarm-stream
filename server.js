@@ -17,23 +17,33 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     this._discovery = createDiscovery(options)
 
     // For making sure other peers don't remember us
+    // Otherwise they'll block new connections if we connected before
     this._discovery.id = null
 
-    // I am not proud of this code
+    // I am not proud of this code, but it works! :D
     const createStream = options.stream || this._discovery._createReplicationStream.bind(this._discovery)
     this._discovery._swarm._stream = (info) => {
       const stream = createStream(info)
 
       debug('got connection', info)
 
+      // This needs to be done so that we can connect to this peer agian
+      const shortId = info.host + ':' + info.port
+
+      const peersSeen = this._discovery._swarm._peersSeen
+      if (peersSeen[shortId]) peersSeen[shortId] = 0
+
       const emitKeyAndClose = (key) => {
         debug('got key from connection', key, info)
         this.emit('key:' + key.toString('hex'), key, info)
         stream.end()
-        this._discovery._swarm._peersSeen[info.id] = null
+
+        // This needs to be done so that we can connect to this peer agian
+        const longId = shortId + '@' + key.toString('hex')
+        if (peersSeen[longId]) peersSeen[longId] = 0
       }
 
-      if(info.channel) {
+      if (info.channel) {
         process.nextTick(() => {
           emitKeyAndClose(info.channel)
         })
@@ -44,7 +54,8 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
       return stream
     }
 
-    this._discovery.on('connection', () => {
+    // We don't need any connections after we have their discovery key
+    this._discovery.on('connection', (connection) => {
       connection.close()
     })
 
