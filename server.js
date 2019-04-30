@@ -16,6 +16,9 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     this.connectExistingClients = !!options.connectExistingClients
     this._discovery = createDiscovery(options)
 
+    // For making sure other peers don't remember us
+    this._discovery.id = null
+
     // I am not proud of this code
     const createStream = options.stream || this._discovery._createReplicationStream.bind(this._discovery)
     this._discovery._swarm._stream = (info) => {
