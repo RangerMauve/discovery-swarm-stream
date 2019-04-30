@@ -26,6 +26,13 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
 
       debug('got connection', info)
 
+      const emitKeyAndClose = (key) => {
+        debug('got key from connection', key, info)
+        this.emit('key:' + key.toString('hex'), key, info)
+        stream.end()
+        this._discovery._swarm._peersSeen[info.id] = null
+      }
+
       if(info.channel) {
         process.nextTick(() => {
           emitKeyAndClose(info.channel)
@@ -33,13 +40,6 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
       }
 
       stream.on('feed', emitKeyAndClose)
-
-      function emitKeyAndClose(key) {
-        debug('got key from connection', key, info)
-        this.emit('key:' + key.toString('hex'), key, info)
-        stream.end()
-        this._discovery._swarm._peersSeen[info.id] = null
-      }
 
       return stream
     }
