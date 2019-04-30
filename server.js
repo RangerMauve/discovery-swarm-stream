@@ -1,8 +1,7 @@
-var discoveryChannel = require('discovery-channel')
 var sodium = require('sodium-universal')
 var EventEmitter = require('events')
 var net = require('net')
-
+var createDiscovery = require('hyperdiscovery')
 var DiscoverySwarmStream = require('./')
 var ProxyStream = require('./proxystream')
 
@@ -14,10 +13,20 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     }
 
     this.connectExistingClients = !!options.connectExistingClients
-    this._discovery = discoveryChannel(options)
-    this._discovery.on('peer', (key, peer) => {
-      this.emit('key:' + key.toString('hex'), key, peer)
-    })
+    this._discovery = createDiscovery(options)
+
+    // I am not proud of this code
+    const createStream = options.stream || this._discovery._createReplicationStream.bind(this._discovery)
+    this._discovery._swarm._stream = (info) => {
+      const stream = createStream(info)
+
+      stream.on('feed', (key) => {
+        this.emit('key:' + key.toString('hex'), key, info)
+      })
+
+      return stream
+    }
+
     this._discovery.on('close', () => this.emit('close'))
 
     // List of clients
@@ -54,12 +63,12 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   }
 
   join (key) {
-    this._discovery.leave(key)
-    this._discovery.join(key)
+    this._discovery._swarm.leave(key)
+    this._discovery._swarm.join(key)
   }
 
   leave (key) {
-    this._discovery.leave(key)
+    this._discovery._swarm.leave(key)
   }
 
   subscribedClients (key) {
@@ -114,7 +123,7 @@ class Client extends DiscoverySwarmStream {
 
       // Don't connect clients together unless you need it
       // This is to encourage connections through WebRTC
-      if(!this._swarm.connectExistingClients) return
+      if (!this._swarm.connectExistingClients) return
 
       var existing = this._swarm.subscribedClients(key)
 
@@ -184,7 +193,7 @@ class Client extends DiscoverySwarmStream {
   }
 
   connectTCP (key, peer) {
-    var id = key + ':' + peer.host + ':' + peer.port
+    var id = peer.id || (key + ':' + peer.host + ':' + peer.port)
     if (this._connections[id]) {
       return this._connections[id]
     }

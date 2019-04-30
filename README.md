@@ -6,6 +6,8 @@ Clients connect to the server, search for "discovery keys", and the proxy automa
 
 If two clients are discovering the same key, the proxy can connect them to each other if you set the `connectExistingClients` on the server.
 
+By default it supports connections for the [hypercore-protocol](https://github.com/mafintosh/hypercore-protocol) used in [Dat](https://datproject.org/). If you'd like to support a different protocol, provide a `stream` argument that conforms to what's expected in [discovery-swarm](https://www.npmjs.com/package/discovery-swarm#var-sw--swarmopts).
+
 Requires:
 
 - ES6 classes
