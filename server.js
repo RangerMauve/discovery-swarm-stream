@@ -27,10 +27,15 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
         debug('got key from connection', key, info)
         this.emit('key:' + key.toString('hex'), key, info)
         stream.end()
+        this._discovery._swarm._peersSeen[info.id] = null
       })
 
       return stream
     }
+
+    this._discovery.on('connection', () => {
+      connection.close()
+    })
 
     this._discovery.on('close', () => this.emit('close'))
 
