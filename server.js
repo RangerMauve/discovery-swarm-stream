@@ -1,10 +1,10 @@
-var discoveryChannel = require('discovery-channel')
 var sodium = require('sodium-universal')
 var EventEmitter = require('events')
 var net = require('net')
-
+var createDiscovery = require('hyperdiscovery')
 var DiscoverySwarmStream = require('./')
 var ProxyStream = require('./proxystream')
+var debug = require('debug')('discovery-swarm-stream:server')
 
 module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   constructor (options) {
@@ -12,10 +12,42 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     if (!options) {
       options = {}
     }
-    this._discovery = discoveryChannel(options)
-    this._discovery.on('peer', (key, peer) => {
-      this.emit('key:' + key.toString('hex'), key, peer)
+
+    this.connectExistingClients = !!options.connectExistingClients
+    this._discovery = createDiscovery(options)
+
+    // For making sure other peers don't remember us
+    this._discovery.id = null
+
+    // I am not proud of this code
+    const createStream = options.stream || this._discovery._createReplicationStream.bind(this._discovery)
+    this._discovery._swarm._stream = (info) => {
+      const stream = createStream(info)
+
+      debug('got connection', info)
+
+      const emitKeyAndClose = (key) => {
+        debug('got key from connection', key, info)
+        this.emit('key:' + key.toString('hex'), key, info)
+        stream.end()
+        this._discovery._swarm._peersSeen[info.id] = null
+      }
+
+      if(info.channel) {
+        process.nextTick(() => {
+          emitKeyAndClose(info.channel)
+        })
+      }
+
+      stream.on('feed', emitKeyAndClose)
+
+      return stream
+    }
+
+    this._discovery.on('connection', () => {
+      connection.close()
     })
+
     this._discovery.on('close', () => this.emit('close'))
 
     // List of clients
@@ -52,12 +84,12 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   }
 
   join (key) {
-    this._discovery.leave(key)
-    this._discovery.join(key)
+    this._discovery._swarm.leave(key)
+    this._discovery._swarm.join(key)
   }
 
   leave (key) {
-    this._discovery.leave(key)
+    this._discovery._swarm.leave(key)
   }
 
   subscribedClients (key) {
@@ -75,6 +107,8 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   addClient (stream) {
     var client = new Client(stream)
     this._clients.push(client)
+
+    debug('incoming client', client.id.toString('hex'))
 
     // TODO: Add timeout and clear on "connection" packet
     client.once('swarm:connect', client.init.bind(client, this))
@@ -105,10 +139,15 @@ class Client extends DiscoverySwarmStream {
     this._swarm = swarm
 
     this.on('swarm:join', (key) => {
+      debug('joining discovery key', this.id.toString('hex'), key)
       var stringKey = key.toString('hex')
       this._swarm.on('key:' + stringKey, this.connectTCP)
       this._subscriptions.push(stringKey)
       this._swarm._joinClient(key, this)
+
+      // Don't connect clients together unless you need it
+      // This is to encourage connections through WebRTC
+      if (!this._swarm.connectExistingClients) return
 
       var existing = this._swarm.subscribedClients(key)
 
@@ -178,10 +217,12 @@ class Client extends DiscoverySwarmStream {
   }
 
   connectTCP (key, peer) {
-    var id = key + ':' + peer.host + ':' + peer.port
+    var id = peer.id || (key + ':' + peer.host + ':' + peer.port)
     if (this._connections[id]) {
       return this._connections[id]
     }
+
+    debug('making outgoing connection', this.id.toString('hex'), key, peer)
 
     var connection = net.connect(peer.port, peer.host)
     this._connections[id] = connection

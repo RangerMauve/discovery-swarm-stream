@@ -5,27 +5,7 @@ var RAM = require('random-access-memory')
 var DSSServer = require('../server')
 var DSSClient = require('../client')
 
-// Taken from dat swarm defaults
-var DAT_DOMAIN = 'dat.local'
-var DEFAULT_DISCOVERY = [
-  'discovery1.datprotocol.com',
-  'discovery2.datprotocol.com'
-]
-var DEFAULT_BOOTSTRAP = [
-  'bootstrap1.datprotocol.com:6881',
-  'bootstrap2.datprotocol.com:6881',
-  'bootstrap3.datprotocol.com:6881',
-  'bootstrap4.datprotocol.com:6881'
-]
-
-var DEFAULT_OPTS = {
-  dns: { server: DEFAULT_DISCOVERY, domain: DAT_DOMAIN },
-  dht: { bootstrap: DEFAULT_BOOTSTRAP },
-  // MAKE SURE YOU ADD THIS!
-  hash: false
-}
-
-var server = new DSSServer(DEFAULT_OPTS)
+var server = new DSSServer({})
 
 var tcpServer = net.createServer((socket) => {
   console.log('Server got connection')
