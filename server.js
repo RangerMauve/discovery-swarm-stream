@@ -3,7 +3,8 @@ const EventEmitter = require('events')
 const net = require('net')
 const createDiscovery = require('hyperdiscovery')
 const crypto = require('crypto')
-const pipe = require('pump')
+const pump = require('pump')
+const lpmessage = require('length-prefixed-message')
 const DiscoverySwarmStream = require('./')
 const ProxyStream = require('./proxystream')
 const debug = require('debug')('discovery-swarm-stream:server')
@@ -14,6 +15,7 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
     if (!options) {
       options = {}
     }
+    this.options = options
 
     this.connectExistingClients = !!options.connectExistingClients
     this._discovery = createDiscovery(options)
@@ -58,13 +60,13 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
 
     // Use this option to hash topics with sha1
     if(options.defaultHash) {
-      this._discovery._swarm._discovery._hash = sha1
+      delete this._discovery._swarm._options.hash
     }
 
     // Use this option to enable the default discovery-swarm handshake
     if(options.defaultHandshake) {
       this._discovery._swarm._stream = null
-      this._discovery._swarm.on('connection', (connection) => {
+      this._discovery._swarm.on('connection', (connection, info) => {
         const replicationStream = stream(info)
         pump(connection, replicationStream, connection)
       })
@@ -75,7 +77,13 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
 
     // We don't need any connections after we have their discovery key
     this._discovery.on('connection', (connection) => {
-      connection.close()
+      if(connection.close) {
+        connection.close()
+      } else if(connection.destroy) {
+        connection.destroy()
+      } else if(connection.end) {
+        connection.end()
+      }
     })
 
     this._discovery.on('close', () => this.emit('close'))
@@ -257,7 +265,14 @@ class Client extends DiscoverySwarmStream {
     var connection = net.connect(peer.port, peer.host)
     this._connections[id] = connection
 
-    this.connectStream(key, connection, id)
+    if(this._swarm.options.defaultHandshake) {
+      lpmessage.write(connection, this.id)
+      lpmessage.read(connection, (err, id) => {
+        this.connectStream(key, connection, id)
+      })
+    } else {
+      this.connectStream(key, connection, id)
+    }
   }
 
   toString () {

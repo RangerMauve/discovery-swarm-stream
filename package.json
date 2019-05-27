@@ -1,6 +1,6 @@
 {
   "name": "discovery-swarm-stream",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Proxy discovery over a stream",
   "main": "index.js",
   "scripts": {
@@ -40,6 +40,7 @@
   "dependencies": {
     "debug": "^4.1.1",
     "hyperdiscovery": "^9.0.0",
+    "length-prefixed-message": "^3.0.3",
     "length-prefixed-stream": "^1.6.0",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
