@@ -1,10 +1,12 @@
-var sodium = require('sodium-universal')
-var EventEmitter = require('events')
-var net = require('net')
-var createDiscovery = require('hyperdiscovery')
-var DiscoverySwarmStream = require('./')
-var ProxyStream = require('./proxystream')
-var debug = require('debug')('discovery-swarm-stream:server')
+const sodium = require('sodium-universal')
+const EventEmitter = require('events')
+const net = require('net')
+const createDiscovery = require('hyperdiscovery')
+const crypto = require('crypto')
+const pipe = require('pump')
+const DiscoverySwarmStream = require('./')
+const ProxyStream = require('./proxystream')
+const debug = require('debug')('discovery-swarm-stream:server')
 
 module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
   constructor (options) {
@@ -22,7 +24,7 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
 
     // I am not proud of this code, but it works! :D
     const createStream = options.stream || this._discovery._createReplicationStream.bind(this._discovery)
-    this._discovery._swarm._stream = (info) => {
+    const stream = (info) => {
       const stream = createStream(info)
 
       debug('got connection', info)
@@ -53,6 +55,23 @@ module.exports = class DiscoverySwarmStreamServer extends EventEmitter {
 
       return stream
     }
+
+    // Use this option to hash topics with sha1
+    if(options.defaultHash) {
+      this._discovery._swarm._discovery._hash = sha1
+    }
+
+    // Use this option to enable the default discovery-swarm handshake
+    if(options.defaultHandshake) {
+      this._discovery._swarm._stream = null
+      this._discovery._swarm.on('connection', (connection) => {
+        const replicationStream = stream(info)
+        pump(connection, replicationStream, connection)
+      })
+    } else {
+      this._discovery._swarm._stream = stream
+    }
+
 
     // We don't need any connections after we have their discovery key
     this._discovery.on('connection', (connection) => {
@@ -244,4 +263,8 @@ class Client extends DiscoverySwarmStream {
   toString () {
     return this.id.toString()
   }
+}
+
+function sha1 (id) {
+  return crypto.createHash('sha1').update(id).digest()
 }

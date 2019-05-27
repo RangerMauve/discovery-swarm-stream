@@ -21,6 +21,12 @@ Requires:
 const DSS = require('discovery-swarm-stream/server')
 
 const swarm = new DSS({
+	// Hash topics through sha1 before passing them through
+	defaultHash: false,
+
+	// Use the default discovery-swarm handshaking
+	defaultHandshake: false,
+
 	// swarm options here
 	// Doesn't support UTP for now
 })
